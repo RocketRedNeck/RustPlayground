@@ -1,5 +1,14 @@
 use text_colorizer::*;
 
+fn f(n: &i32) -> i32 {
+    let n_ptr_ptr = std::ptr::addr_of!(n) as *mut *mut i32;
+    unsafe {
+        println!("n_ptr_ptr is {n_ptr_ptr:p} and *n_ptr_ptr is {:p} and **n_ptr_ptr us {}", *n_ptr_ptr, **n_ptr_ptr);
+    }
+
+    return n * 2
+}
+
 fn main() {
     println!("Hello, types!");
 
@@ -36,7 +45,13 @@ fn main() {
                     b,
                     b.to_string().red(),
                     if b {"true".red()} else {"false".red()});
-            }
         }
+    }
+
+    let n: i32 = 21i32;
+    let n_ptr = std::ptr::addr_of!(n) as *mut i32;
+    println!("n is @ {n_ptr:p}");
+
+    println!("{}",f(&n));
 
 }
