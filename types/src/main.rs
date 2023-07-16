@@ -54,4 +54,28 @@ fn main() {
 
     println!("{}",f(&n));
 
+    println!("\nBoxes...");
+
+    let t = (12, "eggs");
+    let b = Box::new(t);
+    println!("{} {}",b.0, b.1);
+
+    let a: [u32; 10] = [1,2,3,4,5,6,7,8,9,10];
+    let mut a_ptr = std::ptr::addr_of!(a) as *mut u32;
+    unsafe {
+        for i in 0..a.len() {
+            let aa = *a_ptr;
+            println!("aa[{}] = {}",i,aa);
+            *a_ptr = !aa;
+            a_ptr = a_ptr.add(1);
+        }
+    for i in 0..a.len() {  // Adding +1 will not be caught at compile time, forces a code coverage proposition, which is weak
+        println!("a[{}] = {}",i,a[i]);
+    }
+    // caught at compile time: println!("a[{}] = {}",10,a[10]);
+
+
+    }
+
+
 }
