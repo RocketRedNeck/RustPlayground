@@ -60,6 +60,8 @@ fn main() {
     let b = Box::new(t);
     println!("{} {}",b.0, b.1);
 
+    println!("\nArrays...");
+
     let a: [u32; 10] = [1,2,3,4,5,6,7,8,9,10];
     let mut a_ptr = std::ptr::addr_of!(a) as *mut u32;
     unsafe {
@@ -69,13 +71,72 @@ fn main() {
             *a_ptr = !aa;
             a_ptr = a_ptr.add(1);
         }
+    }
+
     for i in 0..a.len() {  // Adding +1 will not be caught at compile time, forces a code coverage proposition, which is weak
-        println!("a[{}] = {}",i,a[i]);
+        println!("a[{:2}] = {}",i,a[i]);
     }
     // caught at compile time: println!("a[{}] = {}",10,a[10]);
 
+    println!("\nVectors...");
+    let mut v: Vec<u32> = vec![1,2,3,4,5,6,7,8,9];
+    v.push(10);
+    for i in 0..v.len() {
+        println!("v[{:2}] = {}",i,v[i]);
+    } 
+    let v_ptr: *mut u32 = std::ptr::addr_of!(v) as *mut u32;
 
+    unsafe {
+        let mut ptr = v_ptr;
+        for i in 0..v.len() {
+            let vv = *ptr;
+            println!("vv[{}] = 0x{:x}",i,vv);
+            // ! this will corrupt the heap *v_ptr = !vv;
+            ptr = ptr.add(1);
+        }
+
+        // NOTE: 64-bit system the address is 32-bit words 2..3 with 3 being the MSW
+        let mut ptr2 = std::ptr::addr_of!(v) as *mut u64;
+        ptr2 = ptr2.add(1);
+        println!("vv[2..3] = 0x{:x}",*ptr2);
+        println!("\n...Corrupting the vector length...");
+        *(ptr2.add(1)) = 20;
+        let mut ptr3 = *ptr2 as *mut u32;
+
+        for i in 0..v.len() {
+           let vv = *ptr3;
+           println!("vv[{:2}] = {} @ 0x{:p}",i,vv,ptr3);
+           ptr3 = ptr3.add(1);
+        }
     }
 
+    println!("\nSlices...");
+    let mut palindrome = vec!["was", "it", "a car", "or", "a cat", "I saw"];
+
+    let n1 = 2;
+    let n2 = 5;
+    let sp: &[&str] = &palindrome[n1..n2];
+
+    for x in &palindrome {
+        print!("{} ",x);
+    }
+    println!("?");
+
+    for x in sp {
+        print!("{} ",x);
+    }
+    println!("?");
+
+    palindrome.reverse();
+    for y in &palindrome {
+        print!("{} ",y);
+    }
+    println!("!");
+
+    let mut s = "Strings...".to_string();
+    println!("\n{}",s);
+
+    s = s + "are fun!";
+    println!("\n\"{}\" is {} bytes long which means no null character",s, s.len());
 
 }
