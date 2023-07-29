@@ -52,14 +52,16 @@ fn start_logger(messages : Receiver<String> )
     {
         println!("{}",message);
         i += 1;
-        if i > 50000
+        if i > 100000
         {
             break;
         }
     }
 }
 fn main() {
-    let (messages, handles) = start_senders(2000, 100000);
+    let (messages, handles) = 
+    start_senders(10, 100000);
+    
     start_logger(messages);
 
     for handle in handles
