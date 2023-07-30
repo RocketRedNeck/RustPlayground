@@ -1,7 +1,6 @@
-use std::io;
 use std::sync::mpsc::{self, Receiver};
 use std::thread;
-use std::time::{self, Instant};
+use std::time::Instant;
 
 fn start_senders(max_senders: u32, depth: usize)
     -> (mpsc::Receiver<String>, Vec<thread::JoinHandle<()>>)
