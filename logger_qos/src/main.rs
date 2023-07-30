@@ -83,7 +83,7 @@ fn start_logger(envelopes : Receiver<Envelope>, depth: usize )
     }
 }
 fn main() {
-    let depth = 50000;
+    let depth = 100000;
     let max_senders = 10u32;
     let (messages, handles) = 
     start_senders(max_senders, depth);
