@@ -4,6 +4,7 @@ use std::time::Instant;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 static ATOM: AtomicUsize = AtomicUsize::new(0);
+static SUM: AtomicUsize = AtomicUsize::new(0);
 
 pub struct Envelope
 {
@@ -27,7 +28,6 @@ fn start_senders(max_senders: u32, depth: usize)
             let mut max_elapsed = 0u128;
             let mut total_elapsed = 0u128;
             loop {
-                ATOM.fetch_add(1, Ordering::SeqCst);
                 let s : String = String::new() + "Thread_" + &j.to_string() + "_" + &i.to_string();
 
                 // Create a response channel
@@ -36,12 +36,15 @@ fn start_senders(max_senders: u32, depth: usize)
                 let now = Instant::now();
                 if my_sender.send(envelope).is_err() {
                     println!("Thread_{} detected receiver stop on i = {} with elapsed min/max/total = {} / {} / {} micros ",j,i,min_elapsed,max_elapsed, total_elapsed);
+                    SUM.fetch_add(i as usize, Ordering::SeqCst);
                     break;
                 }
                 let elapsed = now.elapsed().as_micros();
+                ATOM.fetch_add(1, Ordering::SeqCst);
                 if resp_receiver.recv().is_err()
                 {
                     println!("Thread_{} detected receiver stop on i = {} with elapsed min/max/total = {} / {} / {} micros ",j,i,min_elapsed,max_elapsed, total_elapsed);
+                    SUM.fetch_add(i as usize, Ordering::SeqCst);
                     break;
                 }
                 total_elapsed += elapsed;
@@ -95,5 +98,5 @@ fn main() {
         handle.join().unwrap();
     }
 
-    println!("Total loops for all threads is {}",ATOM.load(Ordering::SeqCst));
+    println!("Total loops for all threads is {} (sum was {})",ATOM.load(Ordering::SeqCst), SUM.load(Ordering::SeqCst));
 }
