@@ -2,10 +2,16 @@ use std::sync::mpsc::{self, Receiver};
 use std::thread;
 use std::time::Instant;
 
-fn start_senders(max_senders: u32, depth: usize)
-    -> (mpsc::Receiver<String>, Vec<thread::JoinHandle<()>>)
+pub struct Envelope
 {
-    let (sender, receiver) = mpsc::channel(); //sync_channel(depth);
+    sender : mpsc::Sender<String>,
+    message: String
+}
+
+fn start_senders(max_senders: u32, depth: usize)
+    -> (mpsc::Receiver<Envelope>, Vec<thread::JoinHandle<()>>)
+{
+    let (sender, receiver) = mpsc::sync_channel(depth);
 
     let mut handles: Vec<thread::JoinHandle<()>> = Vec::new();
     for j in 0u32..max_senders
@@ -17,13 +23,22 @@ fn start_senders(max_senders: u32, depth: usize)
             let mut max_elapsed = 0u128;
             let mut total_elapsed = 0u128;
             loop {
-                let s : String = String::new() + "Thread_" + &j.to_string() + "_";
+                let s : String = String::new() + "Thread_" + &j.to_string() + "_" + &i.to_string();
+
+                // Create a response channel
+                let (resp_sender, resp_receiver) = mpsc::channel::<String>();
+                let envelope = Envelope{sender:resp_sender, message:s};
                 let now = Instant::now();
-                if my_sender.send(s + &i.to_string()).is_err() {
+                if my_sender.send(envelope).is_err() {
                     println!("Thread_{} detected receiver stop on i = {} with elapsed min/max/total = {} / {} / {} micros ",j,i,min_elapsed,max_elapsed, total_elapsed);
                     break;
                 }
                 let elapsed = now.elapsed().as_micros();
+                if resp_receiver.recv().is_err()
+                {
+                    println!("Thread_{} detected receiver stop on i = {} with elapsed min/max/total = {} / {} / {} micros ",j,i,min_elapsed,max_elapsed, total_elapsed);
+                    break;
+                }
                 total_elapsed += elapsed;
                 if elapsed > max_elapsed
                 {
@@ -43,13 +58,18 @@ fn start_senders(max_senders: u32, depth: usize)
     (receiver, handles)
 }
 
-fn start_logger(messages : Receiver<String>, depth : usize )
+fn start_logger(envelopes : Receiver<Envelope>, depth: usize )
     -> ()
 {
     let mut i = 0usize;
-    for message in messages
+    for envelope in envelopes
     {
-        println!("{}",message);
+        if envelope.sender.send("ok".to_string()).is_err()
+        {
+            println!("Loggerdetected receiver stop on i = {}",i);
+            break;
+        }
+        println!("{}",envelope.message);
         i += 1;
         if i > depth
         {
